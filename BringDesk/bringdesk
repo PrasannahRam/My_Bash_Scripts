@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+desktop_dir=$(xdg-user-dir DESKTOP)
 
 if [[ -z "$1" ]]; then
     echo "Usage: $0 <application-name>"
@@ -55,7 +55,7 @@ done
 
 read -p "Choose an application (1-${#apps[@]}): " choice
 
-cp "${apps[$((choice - 1))]}" "$HOME/Desktop/" || {
+cp "${apps[$((choice - 1))]}" "$desktop_dir/" || {
     echo "Error: Failed to copy the shortcut to Desktop." >&2
     exit 1
 }
