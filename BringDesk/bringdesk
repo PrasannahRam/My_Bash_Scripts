@@ -1,0 +1,64 @@
+#!/bin/bash
+
+
+
+if [[ -z "$1" ]]; then
+    echo "Usage: $0 <application-name>"
+    exit 1
+fi
+
+
+search() {
+    local query="$*"
+    local -a directories=(
+        "$HOME/.local/share/applications"
+        "/usr/share/applications"
+        "/usr/local/share/applications"
+        "/var/lib/snapd/desktop/applications"
+        "/var/lib/flatpak/exports/share/applications"
+        "$HOME/.local/share/flatpak/exports/share/applications"
+    )
+    local -a existing=()
+    local dir
+
+    # Skip directories that don't exist, so grep doesn't print errors
+    for dir in "${directories[@]}"; do
+        [[ -d $dir ]] && existing+=("$dir")
+    done
+
+    apps=()
+    (( ${#existing[@]} )) || return 1
+
+    # -R follows symlinks (flatpak/snap exports are often symlinks)
+    # -i case-insensitive, -l list matching files only
+    # the pattern matches the query anywhere on a line that starts with Name=
+    mapfile -t apps < <(
+        grep -RliE --include='*.desktop' -- "^Name=.*${query}" "${existing[@]}" 2>/dev/null
+    )
+}
+
+
+
+echo "Hello from my script! $1"
+
+search "$1"
+
+if [ ${#apps[@]} -eq 0 ]; then
+    echo "No applications found matching '$1'."
+    exit 1
+fi
+echo "Found application"
+
+for i in "${!apps[@]}"; do
+    echo "$((i + 1)): ${apps[$i]}"
+done
+
+read -p "Choose an application (1-${#apps[@]}): " choice
+
+cp "${apps[$((choice - 1))]}" "$HOME/Desktop/" || {
+    echo "Error: Failed to copy the shortcut to Desktop." >&2
+    exit 1
+}
+
+echo "Shortcut created for ${apps[$((choice - 1))]} to Desktop Successfully!!!"
+echo "Please right click on the shortcut and select 'Allow Launching' to make it executable."
